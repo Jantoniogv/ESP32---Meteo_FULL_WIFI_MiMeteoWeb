@@ -10,6 +10,7 @@
 #include "server_functions.h"
 #include "config.h"
 #include "time_npt.h"
+#include "log.h"
 
 #define DEBUG
 #include "debug_utils.h"
@@ -32,6 +33,7 @@ void connectedWiFi()
     DEBUG_PRINT("PassAP: " + String(initPassAP));
 
     DEBUG_PRINT("IP as soft AP: " + WiFi.softAPIP().toString());
+    write_log("IP as soft AP: " + WiFi.softAPIP().toString());
 
     // Se inicia el servidor web
     init_server();
@@ -47,7 +49,8 @@ void connectedWiFi()
     while (WiFi.status() != WL_CONNECTED && wifi_count < 20)
     {
         DEBUG_PRINT(".");
-        // wait 1 second for re-trying
+
+        // Espera un segundo para volver a intentar
         delay(1000);
 
         wifi_count++;
@@ -56,6 +59,7 @@ void connectedWiFi()
     if (WiFi.status() == WL_CONNECTED)
     {
         DEBUG_PRINT("Conectado a " + String(initSsidSTA));
+        write_log("Conectado a " + String(initSsidSTA));
 
         //***** Inicia la configuracion del servidor NTP *****//
         time_npt_init();
@@ -66,7 +70,8 @@ void connectedWiFi()
     else
     {
 
-        DEBUG_PRINT("\nFallo conexion WiFi STA!!\n");
+        DEBUG_PRINT("Fallo conexion WiFi STA, espera dos minutos conexiones en modo AP y se va a modo sleep...");
+        write_log("Fallo conexion WiFi STA, espera dos minutos conexiones en modo AP y se va a modo sleep...");
 
         delay(TIME_SERVER * S_a_M_FACTOR * 1000);
 

@@ -7,7 +7,7 @@
 #include <WiFi.h>
 
 // Pluviometro pin
-#define RAIN_SENSOR 33
+#define RAIN_SENSOR 25
 
 // Definimos el pin 35 como pin de obtencion de datos de la veleta
 #define WIND_DIRECTION_SENSOR 35
@@ -27,11 +27,19 @@
 
 #define TIME_SLEEP 10 /* Tiempo que duerme en minutos */
 
-#define TIME_SERVER 2 /* Tiempo que esta despierto esperando conexion el servidor web en minutos */
+#define TIME_SERVER 2 /* Tiempo que esta despierto esperando conexion el servidor web en segundos */
 
 // #define mS_a_S_FACTOR 1000 /* x 1000 para tener segundos */
 
-#define TIME_RAIN 3 /* Tiempo minimo que esta despierto en minutos, en caso de despertar por lluvia */
+// #define PIN_WAKE_UP_SERVER 0x8000000 // Mascara de bit en hexadecimal obtenida con 2^GPIO_NUMBER, en este caso el pin 27, 2^27
+
+#define N_SAMPLES_WIND_DIRECTION 20 // Numero de muestras que toma para medir la direccion del viento
+
+#define N_COMP_WIND_DIRECTION 17 // Numero de componentes posibles de direccion del viento
+
+#define N_SAMPLES_VOL 10 // Numero de muestras que toma para medir el voltaje
+
+bool keep_awake = false; // Estado que almacena si debe mantener despierto al ESP32 o no
 
 //***** Constantes y objetos necesarios para realizar la conexion WiFi *****//
 wifi_mode_t initWifiType = WIFI_MODE_APSTA;
@@ -39,8 +47,8 @@ wifi_mode_t initWifiType = WIFI_MODE_APSTA;
 // const char *initSsidSTA = "Router_Casa_Juncares"; // SSID conexion WiFi STA
 // const char *initPassSTA = "Red_Juncares";         // Contraseña conexion WiFi STA
 
-const char *initSsidSTA = "DIGIFIBRA-Ap99"; // SSID conexion WiFi STA
-const char *initPassSTA = "612018_2482019"; // Contraseña conexion WiFi STA
+const char *initSsidSTA = "Router_Casa_Juncares_2.4G"; // SSID conexion WiFi STA
+const char *initPassSTA = "Red_Juncares";              // Contraseña conexion WiFi STA
 
 const char *initSsidAP = "MyESP32AP_2022"; // SSID conexion WiFi AP
 const char *initPassAP = "adminadmin";     // Contraseña conexion WiFi AP
@@ -66,16 +74,16 @@ float temp = 0;     // variable para almacenar valor de temperatura
 float presion = 0;  // variable para almacenar valor de presion atmosferica
 float humedity = 0; // variable para almacenar valor de presion atmosferica
 
-String s_Temp;
-String s_Presion;
-String s_Humedity;
+String s_Temp = "--";
+String s_Presion = "--";
+String s_Humedity = "--";
 
 //***** Variable en las que se almacenara los valores medidos para la lluvia *****//
 RTC_DATA_ATTR float liters_m2 = 0; // Esta variable estara almacenada en la memoria del reloj RTC a fin de que se guarde su valor durante los periodos de sueño
 
 const float u_pluviometro = 0.45; // Unidad medida del pluviometro
 
-String s_liters_m2; // String donde se guardara la lluvia medida para enviar los datos al servidor
+String s_liters_m2 = "--"; // String donde se guardara la lluvia medida para enviar los datos al servidor
 
 unsigned long last_t_liters = 0;    // Variable que almacena el ultimo tiempo en ms cuado se registro un pulso del pluviometro
 unsigned long current_t_liters = 0; // Variable que almacena el tiempo actual en ms del pulso del pluviometro
@@ -87,9 +95,9 @@ volatile int rev_anemometer = 0; // Esta variable la encargada de almacenar las 
 
 float wind_velocity[5]; // Este array almacena cinco medidas del anemometro a fin de realizar una media de entre ellos
 
-String s_wind_max;
-String s_wind_min;
-String s_wind_avg;
+String s_wind_max = "--";
+String s_wind_min = "--";
+String s_wind_avg = "--";
 
 //***** Variables de la veleta *****//
 
@@ -97,26 +105,35 @@ String s_wind_avg;
 String wind_dir_comp[] = {"NORTE", "NORTE-NOROESTE", "NOROESTE", "ESTE-NOROESTE", "ESTE", "ESTE-SURESTE", "SURESTE", "SUR-SURESTE",
                           "SUR", "SUR-SUROESTE", "SUROESTE", "OESTE-SUROESTE", "OESTE", "OESTE-NOROESTE", "NOROESTE", "NORTE-NOROESTE", "UNDEFINED"};
 
-int sensor_wind_min[] = {750, 2340, 2100, 3950, 3800, 4000, 3200, 3600, 2700, 3000, 1400, 1500, 100, 600, 300, 1100};
-int sensor_wind_max[] = {900, 2380, 2200, 3980, 3940, 4095, 3400, 3700, 2950, 3100, 1499, 1600, 200, 700, 599, 1200};
+int sensor_wind_min[] = {3030, 1460, 1690, 150, 210, 80, 550, 320, 980, 800, 2380, 2250, 3960, 3230, 3560, 2670};
+int sensor_wind_max[] = {3110, 1540, 1770, 205, 240, 140, 630, 400, 1060, 880, 2440, 2330, 4040, 3310, 3640, 2750};
 
 // Estas variables sirven para almacenar la direccion del viento, el valor leido del sensor y la media del valor despues de varias medidas
-String wind_direction;
+String wind_direction = "--";
+
+// Constantes de medicion de voltaje
+const int voltaje_analog = 3410;
+const int voltaje_max_x_100 = 420;
 
 // Almacena la lectura del voltaje
-float voltaje_bat;
-String s_voltaje;
+float voltaje_bat_min = 3.0;
+float voltaje_bat = 0;
+String s_voltaje = "--";
+
 // int wind_direction_avg = 0;
 
 //***** Esta variable almacena en formato String los datos a subir al servidor *****//
-String s_GET;
+String s_GET = "--";
 
 //***** Estas variales se encargan de almacenar la ultima vez que se envio datos y el minuto actual *****//
 RTC_DATA_ATTR int last_minute = 0;
 int current_minute = 0;
 
-//***** Variable para contar las veces que el ESP32 ha despertado *****//
-RTC_DATA_ATTR int boot_sleep_count = 0;
+//***** Variable para contar las veces que el ESP32 ha enviado datos *****//
+RTC_DATA_ATTR int send_data_count = 0;
+
+//***** Esta variable se encarga de establecer cuando se envia datos 'true' y cuando no 'false' ******//
+RTC_DATA_ATTR bool first_start = true;
 
 //***** Esta variable se encarga de establecer cuando se envia datos 'true' y cuando no 'false' ******//
 bool send_data = false;

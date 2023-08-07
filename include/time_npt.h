@@ -15,7 +15,7 @@ void time_npt_init()
 }
 
 //***** Funciones que obtienen la hora y los minutos actuales *****//
-int getMinutes()
+int get_minutes()
 {
     struct tm timeinfo;
 
@@ -34,7 +34,7 @@ int getMinutes()
     }
 }
 
-String getdate()
+String get_date()
 {
     struct tm timeinfo;
 
@@ -53,7 +53,7 @@ String getdate()
     }
 }
 
-// int getHour() {
+// int get_hour() {
 //   struct tm timeinfo;
 //
 //   if (!getLocalTime(&timeinfo)) {

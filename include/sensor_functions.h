@@ -86,15 +86,14 @@ float avg_velocity()
 String read_wind_direction()
 {
 
-    int wind_direction_analog[20];
-    int wind_direction_count[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int wind_direction_analog[N_SAMPLES_WIND_DIRECTION];   // Almacena las lecturas analogicas de la veleta
+    int wind_direction_count[N_COMP_WIND_DIRECTION] = {0}; // Almacena las veces que ocurre cada direccion en cada toma de muestras
 
-    int wind_dir_count_max = 0;
+    int wind_dir_count_max = 0; // Almacena el maximo de veces que ha ocurrido un direccion
 
-    int element_array_wdc;
-    // wind_direction_avg = 0;
+    int element_array_wdc; // Almacena el elemento del array componetes de direccion que ha ocurrido mas veces en la medida
 
-    for (int i = 0; i < 20; i++)
+    for (int i = 0; i < N_SAMPLES_WIND_DIRECTION; i++)
     {
 
         wind_direction_analog[i] = analogRead(WIND_DIRECTION_SENSOR);
@@ -102,37 +101,29 @@ String read_wind_direction()
         delay(50);
     }
 
-    // wind_direction_avg = (int)(wind_direction_analog / 10);
-
-    // DEBUG_PRINT("Lectura sensor de direccion del viento: " + String(wind_direction_avg));
-
     // Algoritmo que cuenta las veces que se ha dado cada una de las direcciones
-    for (int i = 0; i < 20; i++)
+    for (int i = 0; i < N_SAMPLES_WIND_DIRECTION; i++)
     {
-        for (int j = 0; j < 17; j++)
+        for (int j = 0; j < N_COMP_WIND_DIRECTION; j++)
         {
-
+            // Comprueba a que componente de la direccion del viento pertence la medida a medida que recorre el array,
+            // si la encuentra, suma uno en el array suma de cada componente, y si llega a la ultima posicion sin coincidir
+            // ningun componente real, lo suma al UNDEFINED
             if (wind_direction_analog[i] <= sensor_wind_max[j] && wind_direction_analog[i] >= sensor_wind_min[j])
             {
-
                 wind_direction_count[j]++;
-
-                // wind_dir = wind_dir_comp[i];
-
                 break;
             }
-            else
+            else if (j == N_COMP_WIND_DIRECTION - 1)
             {
 
-                wind_direction_count[j] = 16;
-
-                // wind_dir = wind_dir_comp[16];
+                wind_direction_count[N_COMP_WIND_DIRECTION - 1]++;
             }
         }
     }
 
     // Se determina la direccion que mas veces ha ocurrido y se devuelve
-    for (int i = 0; i < 17; i++)
+    for (int i = 0; i < N_COMP_WIND_DIRECTION; i++)
     {
 
         if (wind_direction_count[i] > wind_dir_count_max)
@@ -150,14 +141,21 @@ String read_wind_direction()
 //***** Lee el voltaje de la bateria *****//
 float read_voltaje()
 {
+    int voltaje = 0;
 
-    int voltaje = analogRead(VOLTAJE_BATTERY);
+    for (int i = 0; i < N_SAMPLES_VOL; i++)
+    {
 
-    DEBUG_PRINT(voltaje);
+        voltaje += analogRead(VOLTAJE_BATTERY);
+    }
 
-    voltaje = map(voltaje, 0, 3440, 0, 420);
+    int voltaje_medio = voltaje / N_SAMPLES_VOL;
 
-    voltaje_bat = (float)voltaje / 100;
+    DEBUG_PRINT(voltaje_medio);
+
+    voltaje_medio = map(voltaje_medio, 0, voltaje_analog, 0, voltaje_max_x_100);
+
+    voltaje_bat = (float)voltaje_medio / 100;
 
     DEBUG_PRINT(voltaje_bat);
 
@@ -185,9 +183,9 @@ void printDataSerial()
 
     // Muestra la direccion, velocidad maxima, minima y media del viento
     DEBUG_PRINT("Direccion viento: " + wind_direction + "\n");
-    DEBUG_PRINT("Vel. max: " + String(max_velocity()) + " km/s");
-    DEBUG_PRINT("Vel. min: " + String(min_velocity()) + " km/s");
-    DEBUG_PRINT("Vel. media: " + String(avg_velocity()) + " km/s");
+    DEBUG_PRINT("Vel. max: " + String(max_velocity()) + " km/h");
+    DEBUG_PRINT("Vel. min: " + String(min_velocity()) + " km/h");
+    DEBUG_PRINT("Vel. media: " + String(avg_velocity()) + " km/h");
 
     // Muestra la direccion, velocidad maxima, minima y media del viento
     DEBUG_PRINT("Voltaje bateria: " + s_voltaje + "V");

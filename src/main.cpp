@@ -8,6 +8,7 @@
 #include "sensor_functions.h"
 #include "wifi_functions.h"
 #include "config.h"
+#include "log.h"
 
 #define DEBUG
 #include "debug_utils.h"
@@ -15,9 +16,9 @@
 void setup()
 {
   //***** Inicializamos el pin del pluviometro y su interrupcion *****//
-  pinMode(RAIN_SENSOR, INPUT_PULLDOWN);
+  pinMode(RAIN_SENSOR, INPUT);
 
-  attachInterrupt(RAIN_SENSOR, sumLiters_m2, RISING);
+  attachInterrupt(RAIN_SENSOR, sumLiters_m2, FALLING);
   delay(50);
 
   //***** Inicializamos el pin del anemometro y su interrupcion *****//
@@ -32,17 +33,20 @@ void setup()
   //***** Configuramos el modo sleep del ESP32 *****//
   esp_sleep_enable_timer_wakeup(TIME_SLEEP * S_a_M_FACTOR * uS_a_S_FACTOR);
 
-  //***** Configura el pin para despertar al esp32 cuando se reciba un valor alto
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_33, 1);
+  //***** Configura el pin para despertar al esp32 cuando se reciba un valor bajo en el pin conectado al pluviometro *****//
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_25, 0);
+
+  //***** Configura el pin para despertar al esp32 cuando se reciba un valor alto en el pin 27 conectado a un interruptor externo *****//
+  // esp_sleep_enable_ext1_wakeup(PIN_WAKE_UP_SERVER, ESP_EXT1_WAKEUP_ANY_HIGH);
 
   delay(100);
 
-  //***** Mide el voltaje de la bateria y si es inferior a 2,7 V, se duerme al ESP32 *****//
-  if (read_voltaje() < 2.7)
+  //***** Mide el voltaje de la bateria y si es inferior a 3.0 V, se duerme al ESP32 *****//
+  if (read_voltaje() < voltaje_bat_min)
   {
     DEBUG_PRINT("Voltaje bajo, ESP32 a dormir");
 
-    esp_deep_sleep_start();
+    // esp_deep_sleep_start();
   }
 
   //***** Suma la cantidad de un vaso del pluviometro, si este ha despertado al ESP32 *****//
@@ -53,9 +57,8 @@ void setup()
     liters_m2 += u_pluviometro;
   }
 
-  boot_sleep_count++; // Suma las veces que ha despertado
-
-  if (boot_sleep_count >= 144)
+  // Reinicia  el ESP32 cada 144 veces despierto, que coincide con aproximadamente cada 24 horas
+  if (send_data_count >= 144)
   {
     ESP.restart();
   }
@@ -63,7 +66,8 @@ void setup()
   //***** Se conecta al wifi *****//
   connectedWiFi();
 
-  delay(100);
+  // Si llega ha este punto se ha iniciado correctamente y se detalla en el log
+  write_log("Iniciado correctamente...");
 
   delay(100);
 }
@@ -72,17 +76,17 @@ void loop()
 {
 
   //***** Obtnemos el minuto de la hora, a fin de calcular si ha pasado el tiempo suficiente para realizar las medidas de nuevo *****//
-  current_minute = getMinutes();
+  current_minute = get_minutes();
 
-  int diff_minutes = current_minute - last_minute;
+  int diff_minutes_last_send_data = current_minute - last_minute;
 
   // Corregimos a formato sesagesimal en caso de que haya cambio de hora
-  if (diff_minutes < 0)
+  if (diff_minutes_last_send_data < 0)
   {
-    diff_minutes += 60;
+    diff_minutes_last_send_data += 60;
   }
 
-  if ((diff_minutes >= MINUTES_BETWEEN_SEND_DATA))
+  if ((diff_minutes_last_send_data >= MINUTES_BETWEEN_SEND_DATA) || send_data_count == 0)
   {
     send_data = true;
   }
@@ -96,6 +100,11 @@ void loop()
   {
     if (send_data == true)
     {
+
+      //***** Establecemos el ultimo tiempo que se envio los datos al principio a fin de que el tiempo entre envio *****//
+      //***** de datos sea de 10 minutos *****//
+      last_minute = current_minute;
+
       HTTPClient client;
 
       //***** Inicializamos el sensor BME280 *****//
@@ -156,7 +165,7 @@ void loop()
       s_GET = "?temperature=" + s_Temp + "&humidity=" + s_Humedity + "&presion=" + s_Presion + "&rain=" + s_liters_m2 + "&wind_direction=" + wind_direction + "&avg_wind=" + s_wind_avg + "&max_wind=" + s_wind_max + "&min_wind=" + s_wind_min + "&voltaje=" + s_voltaje;
 
       //***** Conectamos a google script y enviamos los datos mediante GET, a una app que los almacena en google sheets *****//
-      DEBUG_PRINT("\nStarting connection to google scripts ...");
+      DEBUG_PRINT("Starting connection to google scripts...");
 
       if (client.begin(serverURL))
       {
@@ -166,7 +175,7 @@ void loop()
 
         if (httpCode > 0)
         {
-          DEBUG_PRINT("\nStatuscode: " + String(httpCode));
+          DEBUG_PRINT("Statuscode: " + String(httpCode));
 
           client.end();
         }
@@ -181,7 +190,8 @@ void loop()
       }
 
       //***** Conectamos a mimeteoweb API y enviamos los datos mediante POST, es una API que luego los sirve mediante un servicio web *****//
-      DEBUG_PRINT("\nStarting connection to mimetoweb ...");
+      DEBUG_PRINT("Starting connection to mimetoweb...");
+      write_log("Starting connection to mimetoweb...");
 
       if (client.begin(mimeteowebURL))
       {
@@ -193,7 +203,7 @@ void loop()
 
         JsonObject object = doc.to<JsonObject>();
         object["location"] = "iznajar";
-        object["date"] = getdate();
+        object["date"] = get_date();
         object["temp"] = temp;
         object["hum"] = humedity;
         object["pressure"] = presion;
@@ -219,11 +229,13 @@ void loop()
         else
         {
           DEBUG_PRINT("Error on HTTP request to mimeteoweb");
+          write_log("Error on HTTP request to mimeteoweb");
         }
       }
       else
       {
         DEBUG_PRINT("Error conection to mimeteoweb");
+        write_log("Error conection to mimeteoweb");
       }
 
       delay(1000);
@@ -234,42 +246,43 @@ void loop()
       //***** Resetea la lluvia caida *****//
       liters_m2 = 0;
 
-      //***** Establecemos el ultimo tiempo que se envio los datos *****//
-      last_minute = current_minute;
-
       //***** Establece en false el envio de datos hasta que pase de nuevo 10 minutos *****//
       send_data = false;
+
+      // Suma las veces que ha enviado datos
+      send_data_count++;
     }
 
     //***** ESP32 a dormir si procede ******//
 
-    //***** Obtnemos el minuto de la hora
-    int diff_minutes_sleep = getMinutes() - last_minute;
+    //***** Obtnemos el minuto de la hora a fin de determinar la diferencia de tiempo entre el ultimo envio de datos *****//
+    diff_minutes_last_send_data = get_minutes() - last_minute;
 
     // Corregimos a formato sesagesimal en caso de que haya cambio de hora
-    if (diff_minutes_sleep < 0)
+    if (diff_minutes_last_send_data < 0)
     {
-      diff_minutes_sleep += 60;
+      diff_minutes_last_send_data += 60;
     }
 
-    DEBUG_PRINT("Diferencia desde ultimo envio: " + String(diff_minutes_sleep));
+    DEBUG_PRINT("Diferencia desde ultimo envio: " + String(diff_minutes_last_send_data));
 
-    if (((wakeup_reason != ESP_SLEEP_WAKEUP_EXT0) || (diff_minutes_sleep > TIME_RAIN)) && (diff_minutes_sleep > TIME_SERVER))
+    if ((!keep_awake) && (diff_minutes_last_send_data > TIME_SERVER))
     {
       DEBUG_PRINT("ESP32 to sleep!");
 
       //***** Configuramos el modo sleep del ESP32 *****//
-      esp_sleep_enable_timer_wakeup((TIME_SLEEP - diff_minutes_sleep) * S_a_M_FACTOR * uS_a_S_FACTOR);
+      esp_sleep_enable_timer_wakeup((TIME_SLEEP - diff_minutes_last_send_data) * S_a_M_FACTOR * uS_a_S_FACTOR);
 
       esp_deep_sleep_start();
     }
   }
   else
   {
-    delay(1000);
+    WiFi.disconnect();
 
-    DEBUG_PRINT("ESP32 to sleep!");
+    DEBUG_PRINT("Desconectado de WiFi STA!!");
 
-    esp_deep_sleep_start();
+    //***** Se intenta conectar de nuevo al WiFi *****//
+    connectedWiFi();
   }
 }
