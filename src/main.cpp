@@ -220,7 +220,10 @@ void loop()
 
         int httpCode = client.POST(jsonOutput);
 
-        if (httpCode > 0)
+        DEBUG_PRINT("Data send to mimeteoweb...");
+        write_log("Data send to mimeteoweb...");
+
+        if (httpCode < 0)
         {
           DEBUG_PRINT("\nStatuscode: " + String(httpCode));
 

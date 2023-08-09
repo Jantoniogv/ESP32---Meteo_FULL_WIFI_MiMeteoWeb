@@ -41,7 +41,7 @@ void connectedWiFi()
     // Conexion STA WiFi
     int wifi_count = 0;
 
-    DEBUG_PRINT("Conectando WiFi STA a SSID: " + String(initSsidSTA));
+    DEBUG_PRINT("Conecting WiFi STA a SSID: " + String(initSsidSTA));
 
     WiFi.begin(initSsidSTA, initPassSTA);
 
@@ -58,8 +58,11 @@ void connectedWiFi()
 
     if (WiFi.status() == WL_CONNECTED)
     {
-        DEBUG_PRINT("Conectado a " + String(initSsidSTA));
-        write_log("Conectado a " + String(initSsidSTA));
+        DEBUG_PRINT("Conected to " + String(initSsidSTA));
+        write_log("Conected to " + String(initSsidSTA));
+
+        DEBUG_PRINT("IP local " + WiFi.localIP().toString());
+        write_log("IP local " + WiFi.localIP().toString());
 
         //***** Inicia la configuracion del servidor NTP *****//
         time_npt_init();

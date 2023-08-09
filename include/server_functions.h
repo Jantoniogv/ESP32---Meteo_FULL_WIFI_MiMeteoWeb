@@ -59,15 +59,14 @@ void init_server()
   server_AP.on("/reset", HTTP_GET, [](AsyncWebServerRequest *request)
                { request->send(200, "text/plain", "Reiniciando..."); 
               ESP.restart(); });
-
   // Inicia ElegantOTA
   AsyncElegantOTA.begin(&server_AP);
 
   // Inicia el servidor
   server_AP.begin();
 
-  DEBUG_PRINT("Servidor HTTP iniciado...");
-  write_log("Servidor HTTP iniciado...");
+  DEBUG_PRINT("Server HTTP started...");
+  write_log("Server HTTP started...");
 }
 
 #endif //_SERVER_FUNCTIONS_H
