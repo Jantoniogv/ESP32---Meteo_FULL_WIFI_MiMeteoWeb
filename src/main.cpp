@@ -46,7 +46,7 @@ void setup()
   {
     DEBUG_PRINT("Voltaje bajo, ESP32 a dormir");
 
-    // esp_deep_sleep_start();
+    esp_deep_sleep_start();
   }
 
   //***** Suma la cantidad de un vaso del pluviometro, si este ha despertado al ESP32 *****//
@@ -110,7 +110,8 @@ void loop()
       //***** Inicializamos el sensor BME280 *****//
       if (bme.begin())
       {
-        DEBUG_PRINT("BME280 encontrado!\n");
+        DEBUG_PRINT("BME280 encontrado!");
+        write_log("BME280 encontrado!");
 
         //***** Leemos los datos del sensor BME280*****//
         temp = bme.readTemperature();       // Almacena en variable el valor de temperatura
@@ -120,7 +121,8 @@ void loop()
       else
       {
         // Si falla la comunicacion con el sensor mostrar texto y detener flujo del programa
-        DEBUG_PRINT("BME280 no encontrado!\n");
+        DEBUG_PRINT("BME280 no encontrado!");
+        write_log("BME280 no encontrado!");
 
         // while (1);
       }
@@ -162,12 +164,12 @@ void loop()
       s_voltaje.replace('.', ',');
 
       // Contruimos la parte 'GET' de la peticion que enviamos al servidor
-      s_GET = "?temperature=" + s_Temp + "&humidity=" + s_Humedity + "&presion=" + s_Presion + "&rain=" + s_liters_m2 + "&wind_direction=" + wind_direction + "&avg_wind=" + s_wind_avg + "&max_wind=" + s_wind_max + "&min_wind=" + s_wind_min + "&voltaje=" + s_voltaje;
+      // s_GET = "?temperature=" + s_Temp + "&humidity=" + s_Humedity + "&presion=" + s_Presion + "&rain=" + s_liters_m2 + "&wind_direction=" + wind_direction + "&avg_wind=" + s_wind_avg + "&max_wind=" + s_wind_max + "&min_wind=" + s_wind_min + "&voltaje=" + s_voltaje;
 
       //***** Conectamos a google script y enviamos los datos mediante GET, a una app que los almacena en google sheets *****//
-      DEBUG_PRINT("Starting connection to google scripts...");
+      // DEBUG_PRINT("Starting connection to google scripts...");
 
-      if (client.begin(serverURL))
+      /* if (client.begin(serverURL))
       {
         // client.addHeader("Content-Type", "application/json");
 
@@ -187,7 +189,7 @@ void loop()
       else
       {
         DEBUG_PRINT("Error conection to script.google.com");
-      }
+      } */
 
       //***** Conectamos a mimeteoweb API y enviamos los datos mediante POST, es una API que luego los sirve mediante un servicio web *****//
       DEBUG_PRINT("Starting connection to mimetoweb...");
@@ -223,17 +225,10 @@ void loop()
         DEBUG_PRINT("Data send to mimeteoweb...");
         write_log("Data send to mimeteoweb...");
 
-        if (httpCode < 0)
-        {
-          DEBUG_PRINT("\nStatuscode: " + String(httpCode));
+        DEBUG_PRINT("Status code http request: " + String(httpCode));
+        write_log("Status code http request: " + String(httpCode));
 
-          client.end();
-        }
-        else
-        {
-          DEBUG_PRINT("Error on HTTP request to mimeteoweb");
-          write_log("Error on HTTP request to mimeteoweb");
-        }
+        client.end();
       }
       else
       {
@@ -284,6 +279,7 @@ void loop()
     WiFi.disconnect();
 
     DEBUG_PRINT("Desconectado de WiFi STA!!");
+    write_log("Desconectado de WiFi STA!!");
 
     //***** Se intenta conectar de nuevo al WiFi *****//
     connectedWiFi();

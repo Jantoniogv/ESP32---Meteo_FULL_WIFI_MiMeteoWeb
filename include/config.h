@@ -57,11 +57,8 @@ IPAddress init_IP_ap = IPAddress(192, 168, 10, 1);
 IPAddress subnet = IPAddress(255, 255, 255, 0);
 
 //***** Constantes que definen los server y url a los que se conecta el ESP32 y envia los datos *****//
-const char *server = "script.google.com"; // Server
+// const String serverURL = "https://script.google.com/macros/s/AKfycbyf-0jMuXnlqXoohD-7WVzVF8J8rs5QlrM02nCP6geWslt-PAVYDesZdD2zqWCUN54/exec"; // URL
 
-const String serverURL = "https://script.google.com/macros/s/AKfycbyf-0jMuXnlqXoohD-7WVzVF8J8rs5QlrM02nCP6geWslt-PAVYDesZdD2zqWCUN54/exec"; // URL
-
-const char *mimeteowebServer = "mimeteoweb.up.railway.app";
 const String mimeteowebURL = "https://mimeteoweb.up.railway.app/api/v1/add-meteo-dates";
 
 //***** Constantes y objetos necesarios para realizar la conexion NTP y obtener la hora *****//
