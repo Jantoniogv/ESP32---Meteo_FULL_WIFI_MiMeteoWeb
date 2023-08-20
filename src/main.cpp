@@ -76,7 +76,7 @@ void loop()
 {
 
   //***** Obtnemos el minuto de la hora, a fin de calcular si ha pasado el tiempo suficiente para realizar las medidas de nuevo *****//
-  current_minute = get_minutes();
+  current_minute = get_minute();
 
   int diff_minutes_last_send_data = current_minute - last_minute;
 
@@ -239,7 +239,7 @@ void loop()
       delay(1000);
 
       //***** Imprimimos los valores de la estación en la consola *****//
-      printDataSerial();
+      print_data_serial();
 
       //***** Resetea la lluvia caida *****//
       liters_m2 = 0;
@@ -254,7 +254,7 @@ void loop()
     //***** ESP32 a dormir si procede ******//
 
     //***** Obtnemos el minuto de la hora a fin de determinar la diferencia de tiempo entre el ultimo envio de datos *****//
-    diff_minutes_last_send_data = get_minutes() - last_minute;
+    diff_minutes_last_send_data = get_minute() - last_minute;
 
     // Corregimos a formato sesagesimal en caso de que haya cambio de hora
     if (diff_minutes_last_send_data < 0)

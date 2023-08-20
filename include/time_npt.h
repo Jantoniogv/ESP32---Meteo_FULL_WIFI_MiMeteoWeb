@@ -15,7 +15,7 @@ void time_npt_init()
 }
 
 //***** Funciones que obtienen la hora y los minutos actuales *****//
-int get_minutes()
+int get_minute()
 {
     struct tm timeinfo;
 

@@ -25,12 +25,10 @@ void connectedWiFi()
     WiFi.softAP(initSsidAP, initPassAP);
 
     // Asignamos la IP del punto de acceso
-
     WiFi.softAPConfig(init_IP_ap, init_IP_ap, subnet);
 
-    DEBUG_PRINT("SsidAP: " + String(initSsidAP));
-
-    DEBUG_PRINT("PassAP: " + String(initPassAP));
+    DEBUG_PRINT("SsidAP: " + String(initSsidAP) + "PassAP: " + String(initPassAP));
+    write_log("SsidAP: " + String(initSsidAP) + "PassAP: " + String(initPassAP));
 
     DEBUG_PRINT("IP as soft AP: " + WiFi.softAPIP().toString());
     write_log("IP as soft AP: " + WiFi.softAPIP().toString());
@@ -64,7 +62,7 @@ void connectedWiFi()
         DEBUG_PRINT("IP local " + WiFi.localIP().toString());
         write_log("IP local " + WiFi.localIP().toString());
 
-        //***** Inicia la configuracion del servidor NTP *****//
+        // Inicia la configuracion del servidor NTP
         time_npt_init();
 
         // client.setCACert(root_ca);

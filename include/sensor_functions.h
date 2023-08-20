@@ -163,7 +163,7 @@ float read_voltaje()
 }
 
 //***** Muestra los datos de los sensores en el monitor serie *****//
-void printDataSerial()
+void print_data_serial()
 {
     DEBUG_PRINT("-------------------------------");
 
