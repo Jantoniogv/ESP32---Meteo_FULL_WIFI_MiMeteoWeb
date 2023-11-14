@@ -31,13 +31,27 @@ void IRAM_ATTR wind_velocity_interrupt()
     rev_anemometer++;
 }
 
+void measure_vel_wind()
+{
+    //***** Durante este bucle se toman cinco medidas de la velocidad del viento, cada una de seis mil milisegundos *****//
+    for (int i = 0; i < 5; i++)
+    {
+        rev_anemometer = 0;
+        delay(6000);
+
+        wind_velocity[i] = (float)rev_anemometer * 0.4; // Se almacena en el array cada medida en km/h, habiendose determinado que las revoluciones contadas en los seis
+        // segundos multiplicadas por 0,4 nos da la velocidad en km/h, siendo una rev/s equivalente a 2,4 km/h
+
+        DEBUG_PRINT("Velocidad del viento: " + String(wind_velocity[i]) + " km/s");
+    }
+}
+
 // Funciones para calcular la velocidad maxima, minima y media del viento
 float max_velocity()
 {
+    float _max = -1;
 
-    float _max = 0;
-
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < n_sample_wind; i++)
     {
 
         if (wind_velocity[i] > _max)
@@ -52,10 +66,9 @@ float max_velocity()
 
 float min_velocity()
 {
+    float _min = -1;
 
-    float _min = wind_velocity[0];
-
-    for (int i = 1; i < 5; i++)
+    for (int i = 1; i < n_sample_wind; i++)
     {
 
         if (wind_velocity[i] < _min)
@@ -70,16 +83,15 @@ float min_velocity()
 
 float avg_velocity()
 {
+    float _sum = -1;
 
-    float _sum = 0;
-
-    for (int i = 1; i < 5; i++)
+    for (int i = 1; i < n_sample_wind; i++)
     {
 
         _sum += wind_velocity[i];
     }
 
-    return _sum / 5;
+    return _sum / n_sample_wind;
 }
 
 // Esta funcion nos determinara la direccion aproximada del viento
@@ -167,28 +179,19 @@ void print_data_serial()
 {
     DEBUG_PRINT("-------------------------------");
 
-    DEBUG_PRINT("Temperatura: "); // muestra texto
-    DEBUG_PRINT(temp);            // muestra valor de la variable
-    DEBUG_PRINT(" C ");           // muestra letra C indicando grados centigrados
-
-    DEBUG_PRINT("Humedad: "); // muestra texto
-    DEBUG_PRINT(humedity);    // muestra valor de la variable
-    DEBUG_PRINT(" % ");       // muestra texto % indicando porcentje
-
-    DEBUG_PRINT("Presion: "); // muestra texto
-    DEBUG_PRINT(presion);     // muestra valor de la variable
-    DEBUG_PRINT(" hPa\n");    // muestra texto hPa indicando hectopascales
-
-    DEBUG_PRINT("Litros/m2: " + String(liters_m2)); // Muestra la lluvia caida
+    DEBUG_PRINT("Temperatura: " + String(temp) + " C "); // Muestra temperatura
+    DEBUG_PRINT("Humedad: " + String(humedity) + " % "); // Muestra humedad
+    DEBUG_PRINT("Presion: " + String(presion) + " hPa"); // Muestra presion
+    DEBUG_PRINT("Litros/m2: " + String(liters_m2));      // Muestra la lluvia caida
 
     // Muestra la direccion, velocidad maxima, minima y media del viento
     DEBUG_PRINT("Direccion viento: " + wind_direction + "\n");
-    DEBUG_PRINT("Vel. max: " + String(max_velocity()) + " km/h");
-    DEBUG_PRINT("Vel. min: " + String(min_velocity()) + " km/h");
-    DEBUG_PRINT("Vel. media: " + String(avg_velocity()) + " km/h");
+    DEBUG_PRINT("Vel. max: " + String(wind_max) + " km/h");
+    DEBUG_PRINT("Vel. min: " + String(wind_min) + " km/h");
+    DEBUG_PRINT("Vel. media: " + String(wind_avg) + " km/h");
 
     // Muestra la direccion, velocidad maxima, minima y media del viento
-    DEBUG_PRINT("Voltaje bateria: " + s_voltaje + "V");
+    DEBUG_PRINT("Voltaje bateria: " + (String)voltaje_bat + "V");
 }
 
 #endif //_SENSOR_FUNCTIONS_H

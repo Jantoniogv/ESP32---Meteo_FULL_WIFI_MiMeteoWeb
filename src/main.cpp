@@ -127,69 +127,15 @@ void loop()
         // while (1);
       }
 
-      //***** Durante este bucle se toman cinco medidas de la velocidad del viento, cada una de seis mil milisegundos *****//
-      for (int i = 0; i < 5; i++)
-      {
-        rev_anemometer = 0;
-        delay(6000);
-
-        wind_velocity[i] = (float)rev_anemometer * 0.4; // Se almacena en el array cada medida en km/h, habiendose determinado que las revoluciones contadas en los seis
-        // segundos multiplicadas por 0,4 nos da la velocidad en km/h, siendo una rev/s equivalente a 2,4 km/h
-
-        DEBUG_PRINT("Velocidad del viento: " + String(wind_velocity[i]) + " km/s");
-      }
-
-      //***** Leemos la direccion del viento desde la veleta *****//
+      //***** Leemos la direccion del viento desde la veleta y se toma las medidas de su velocidad *****//
       wind_direction = read_wind_direction();
 
+      measure_vel_wind();
+      wind_avg = avg_velocity();
+      wind_min = min_velocity();
+      wind_max = max_velocity();
+
       delay(100);
-
-      //***** Pasamos a String los valores de los sensores *****//
-      s_Temp = String(temp);
-      s_Presion = String(presion);
-      s_Humedity = String(humedity);
-      s_liters_m2 = String(liters_m2);
-      s_wind_max = String(max_velocity());
-      s_wind_min = String(min_velocity());
-      s_wind_avg = String(avg_velocity());
-      s_voltaje = String(voltaje_bat);
-
-      s_Temp.replace('.', ',');
-      s_Presion.replace('.', ',');
-      s_Humedity.replace('.', ',');
-      s_liters_m2.replace('.', ',');
-      s_wind_max.replace('.', ',');
-      s_wind_min.replace('.', ',');
-      s_wind_avg.replace('.', ',');
-      s_voltaje.replace('.', ',');
-
-      // Contruimos la parte 'GET' de la peticion que enviamos al servidor
-      // s_GET = "?temperature=" + s_Temp + "&humidity=" + s_Humedity + "&presion=" + s_Presion + "&rain=" + s_liters_m2 + "&wind_direction=" + wind_direction + "&avg_wind=" + s_wind_avg + "&max_wind=" + s_wind_max + "&min_wind=" + s_wind_min + "&voltaje=" + s_voltaje;
-
-      //***** Conectamos a google script y enviamos los datos mediante GET, a una app que los almacena en google sheets *****//
-      // DEBUG_PRINT("Starting connection to google scripts...");
-
-      /* if (client.begin(serverURL))
-      {
-        // client.addHeader("Content-Type", "application/json");
-
-        int httpCode = client.POST(s_GET);
-
-        if (httpCode > 0)
-        {
-          DEBUG_PRINT("Statuscode: " + String(httpCode));
-
-          client.end();
-        }
-        else
-        {
-          DEBUG_PRINT("Error on HTTP request to script.google.com");
-        }
-      }
-      else
-      {
-        DEBUG_PRINT("Error conection to script.google.com");
-      } */
 
       //***** Conectamos a mimeteoweb API y enviamos los datos mediante POST, es una API que luego los sirve mediante un servicio web *****//
       DEBUG_PRINT("Starting connection to mimetoweb...");
@@ -204,15 +150,15 @@ void loop()
         StaticJsonDocument<CAPACITY> doc;
 
         JsonObject object = doc.to<JsonObject>();
-        object["location"] = "iznajar";
+        object["location"] = location;
         object["date"] = get_date();
         object["temp"] = temp;
         object["hum"] = humedity;
         object["pressure"] = presion;
         object["water"] = liters_m2;
-        object["avg_wind"] = avg_velocity();
-        object["min_wind"] = min_velocity();
-        object["max_wind"] = max_velocity();
+        object["avg_wind"] = wind_avg;
+        object["min_wind"] = wind_max;
+        object["max_wind"] = wind_min;
         object["dir_wind"] = wind_direction;
         object["voltaje"] = voltaje_bat;
 

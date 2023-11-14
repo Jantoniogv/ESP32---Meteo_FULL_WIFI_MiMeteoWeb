@@ -34,14 +34,14 @@ String res_enter_point()
 
   response.replace("%fecha%", get_date());
   response.replace("%vol_bat%", s_voltaje);
-  response.replace("%temp%", s_Temp);
-  response.replace("%hum%", s_Humedity);
-  response.replace("%presion%", s_Presion);
-  response.replace("%lluvia%", s_liters_m2);
+  response.replace("%temp%", (String)temp);
+  response.replace("%hum%", (String)humedity);
+  response.replace("%presion%", (String)presion);
+  response.replace("%lluvia%", (String)liters_m2);
   response.replace("%dir_viento%", wind_direction);
-  response.replace("%vel_media_viento%", s_wind_avg);
-  response.replace("%vel_max_viento%", s_wind_max);
-  response.replace("%vel_min_viento%", s_wind_min);
+  response.replace("%vel_media_viento%", (String)wind_avg);
+  response.replace("%vel_max_viento%", (String)wind_max);
+  response.replace("%vel_min_viento%", (String)wind_min);
 
   response.concat("\n\nLOG del ESP32\n\n");
   response.concat(read_log());
