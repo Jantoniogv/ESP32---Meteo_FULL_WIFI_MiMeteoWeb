@@ -33,7 +33,7 @@ String res_enter_point()
                     "Vel. min. viento: %vel_min_viento% km/h\n";
 
   response.replace("%fecha%", get_date());
-  response.replace("%vol_bat%", s_voltaje);
+  response.replace("%vol_bat%", (String)voltaje_bat);
   response.replace("%temp%", (String)temp);
   response.replace("%hum%", (String)humedity);
   response.replace("%presion%", (String)presion);
