@@ -74,7 +74,7 @@ float humedity = 0; // variable para almacenar valor de presion atmosferica
 //***** Variable en las que se almacenara los valores medidos para la lluvia *****//
 RTC_DATA_ATTR float liters_m2 = 0; // Esta variable estara almacenada en la memoria del reloj RTC a fin de que se guarde su valor durante los periodos de sueño
 
-const float u_pluviometro = 0.45; // Unidad medida del pluviometro
+const float u_pluviometro = 0.35; // Unidad medida del pluviometro // p_1=0.45
 
 unsigned long last_t_liters = 0;    // Variable que almacena el ultimo tiempo en ms cuado se registro un pulso del pluviometro
 unsigned long current_t_liters = 0; // Variable que almacena el tiempo actual en ms del pulso del pluviometro

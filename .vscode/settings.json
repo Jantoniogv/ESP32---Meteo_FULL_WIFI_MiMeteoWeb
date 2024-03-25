@@ -11,5 +11,6 @@
         "regex": "cpp",
         "memory": "cpp",
         "cstdlib": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": false
 }

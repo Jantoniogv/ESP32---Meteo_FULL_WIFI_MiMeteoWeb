@@ -49,9 +49,9 @@ void measure_vel_wind()
 // Funciones para calcular la velocidad maxima, minima y media del viento
 float max_velocity()
 {
-    float _max = -1;
+    float _max = wind_velocity[0];
 
-    for (int i = 0; i < n_sample_wind; i++)
+    for (int i = 1; i < n_sample_wind; i++)
     {
 
         if (wind_velocity[i] > _max)
@@ -66,7 +66,7 @@ float max_velocity()
 
 float min_velocity()
 {
-    float _min = -1;
+    float _min = wind_velocity[0];
 
     for (int i = 1; i < n_sample_wind; i++)
     {
@@ -85,7 +85,7 @@ float avg_velocity()
 {
     float _sum = -1;
 
-    for (int i = 1; i < n_sample_wind; i++)
+    for (int i = 0; i < n_sample_wind; i++)
     {
 
         _sum += wind_velocity[i];

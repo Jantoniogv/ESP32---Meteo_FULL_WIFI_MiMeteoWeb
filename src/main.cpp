@@ -146,7 +146,7 @@ void loop()
         client.addHeader("Content-Type", "application/json");
 
         String jsonOutput;
-        const size_t CAPACITY = JSON_OBJECT_SIZE(13);
+        const size_t CAPACITY = JSON_OBJECT_SIZE(15);
         StaticJsonDocument<CAPACITY> doc;
 
         JsonObject object = doc.to<JsonObject>();
@@ -157,8 +157,8 @@ void loop()
         object["pressure"] = presion;
         object["water"] = liters_m2;
         object["avg_wind"] = wind_avg;
-        object["min_wind"] = wind_max;
-        object["max_wind"] = wind_min;
+        object["min_wind"] = wind_min;
+        object["max_wind"] = wind_max;
         object["dir_wind"] = wind_direction;
         object["voltaje"] = voltaje_bat;
 
